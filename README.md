@@ -23,7 +23,7 @@ https://example.com?a=b&d=e
 1. Clone this
 1. `pip install -r requirements.txt`
 1. `export REDIRECTS_PATH=<somewhere you control>`
-1. Create a file in `$REDIRECTS_PATH` with the redirection key you want. Only lowercase letters and numbers are allowed.
-1. In that file, put the location you want to redirect to
+1. Create a file in `$REDIRECTS_PATH` named with the redirection key you want. Only lowercase letters and numbers are allowed.
+1. In that file, put the target URL
 1. Start the flask server, it will create `$REDIRECTS_PATH/hits`
 1. Any hits to that server will look in `$REDIRECTS_PATH/<normalized_path>` and redirect to the new destination
