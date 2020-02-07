@@ -9,7 +9,8 @@ app = Flask(__name__)
 
 NORMALIZER = re.compile(r'[^a-z0-9]')
 REDIR_PATH = pathlib.Path(os.environ['REDIRECTS_PATH'])
-
+HITS_PATH = REDIR_PATH / 'hits'
+os.makedirs(HITS_PATH, exist_ok=True)
 
 def normalize_path(path):
     stripped = NORMALIZER.sub('', path)
@@ -29,17 +30,22 @@ def merge_url_params(redir_url):
 
 def hit_redirect(normalized_path):
     redir_file = REDIR_PATH / normalized_path
-    with open(redir_file, 'rt') as rf:
+    hits_file = HITS_PATH / normalized_path
+    with open(redir_file, 'r') as rf:
         lines = [l.strip() for l in rf.readlines()]
     redir_url = lines[0]
     hit_count = 0
     try:
-        hit_count = int(lines[1])
-    except (LookupError, ValueError) as e:
-        print(e)
+        with open(hits_file, 'r') as hf:
+            hit_count = int(hf.read().strip())
+    except (IOError, ValueError):
+        app.logger.info(f'Could not read {hits_file}, hit_count = 0')
     hit_count += 1
-    with open(redir_file, 'wt') as rf:
-        rf.write("\n".join([redir_url, str(hit_count)]) + "\n")
+    try:
+        with open(hits_file, 'w') as hf:
+            hf.write(str(hit_count))
+    except IOError as e:
+        app.logger.error(f'Could not write {hits_file}: {e.message}')
     return merge_url_params(redir_url)
 
 
