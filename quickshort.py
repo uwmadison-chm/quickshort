@@ -1,3 +1,5 @@
+# Copyright (c) 2020 Board of Regents of the University of Wisconsin System
+
 import os
 import re
 import pathlib
