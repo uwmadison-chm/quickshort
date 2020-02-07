@@ -15,6 +15,19 @@ The idea here: For incoming requests:
 1. Merge query params with the redirect path's redirect params (redirect's params win every time), generate destination URL
 1. Send a 301 to the redirect
 
+## Examples
+
+/foo-bar
+/Foo_Bar
+/FOOBAR
+
+will all look for a redirection file called `foobar`. If `foobar` contains https://example.com?a=b, then:
+
+/foo-bar?a=c&d=e
+
+will redirect to
+https://example.com?a=b&d=e
+
 ## Running
 
 1. Clone this
