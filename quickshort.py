@@ -7,10 +7,12 @@ from flask import Flask, request, abort, redirect
 
 app = Flask(__name__)
 
-NORMALIZER = re.compile(r'[^a-z0-9]')
-REDIR_PATH = pathlib.Path(os.environ['REDIRECTS_PATH'])
-HITS_PATH = REDIR_PATH / 'hits'
+REDIRECTS_PATH = pathlib.Path(os.environ['REDIRECTS_PATH'])
+HITS_PATH = REDIRECTS_PATH / '_hits'
 os.makedirs(HITS_PATH, exist_ok=True)
+
+NORMALIZER = re.compile(r'[^a-z0-9]')
+
 
 def normalize_path(path):
     stripped = NORMALIZER.sub('', path)
@@ -29,11 +31,13 @@ def merge_url_params(redir_url):
 
 
 def hit_redirect(normalized_path):
-    redir_file = REDIR_PATH / normalized_path
+    redir_file = REDIRECTS_PATH / normalized_path
     hits_file = HITS_PATH / normalized_path
+    redir_url = ''
+    app.logger.info(f'Trying to read {redir_file}')
     with open(redir_file, 'r') as rf:
-        lines = [l.strip() for l in rf.readlines()]
-    redir_url = lines[0]
+        redir_url = rf.read().strip()
+    app.logger.debug(f'Read redirect URL: {redir_url}')
     hit_count = 0
     try:
         with open(hits_file, 'r') as hf:
@@ -51,9 +55,12 @@ def hit_redirect(normalized_path):
 
 @app.route("/<path:path>")
 def normalize_and_redirect(path):
+    app.logger.info(f'Redirecting for {path}')
     normed = normalize_path(path)
     try:
         dest_url = hit_redirect(normed)
-    except IOError:
+    except IOError as e:
+        app.logger.info(f'Reading redirect failed: {e.message}; returning 404')
         abort(404)
+    app.logger.info(f'Redirecting to {dest_url}')
     return redirect(dest_url, code=301)
