@@ -16,6 +16,12 @@ os.makedirs(HITS_PATH, exist_ok=True)
 NORMALIZER = re.compile(r'[^a-z0-9]')
 
 
+if os.environ.get('GUNICORN_LOGGING'):
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
+
+
 def normalize_path(path):
     stripped = NORMALIZER.sub('', path)
     downed = stripped.lower()

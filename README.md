@@ -28,3 +28,4 @@ https://example.com?a=b&d=e
 1. Start the flask server, it will create `$REDIRECTS_PATH/hits`
 1. Any hits to that server will look in `$REDIRECTS_PATH/<normalized_path>` and redirect to the new destination
 1. In production, do whatever you need to to get it running all nice
+1. Set the GUNICORN_LOGGING environment variable to use gunicorn's logging settings
