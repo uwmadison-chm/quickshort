@@ -1,5 +1,5 @@
 # quickshort
-A very(!) small Flask-based URL shortener. Biased towards making small-ish numbers of forgiving-to-type URLs, from flyers and handouts for human subjects studies.
+A very small Flask-based URL shortener. Biased towards making small-ish numbers of forgiving-to-type URLs, from flyers and handouts for human subjects studies.
 
 Removes any non-alphanumeric characters from incoming URLs, and changes everything to lower case. Passes URL parameters on to the destination. Stores redirects and hit counts in the filesystem — does not rely on a SQL database.
 
@@ -27,3 +27,4 @@ https://example.com?a=b&d=e
 1. In that file, put the target URL
 1. Start the flask server, it will create `$REDIRECTS_PATH/hits`
 1. Any hits to that server will look in `$REDIRECTS_PATH/<normalized_path>` and redirect to the new destination
+1. In production, do whatever you need to to get it running all nice
