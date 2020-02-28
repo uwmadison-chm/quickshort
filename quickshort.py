@@ -36,10 +36,10 @@ def hit_redirect(normalized_path):
     redir_file = REDIRECTS_PATH / normalized_path
     hits_file = HITS_PATH / normalized_path
     redir_url = ''
-    app.logger.info(f'Trying to read {redir_file}')
+    app.logger.debug(f'Trying to read {redir_file}')
     with open(redir_file, 'r') as rf:
         redir_url = rf.read().strip()
-    app.logger.debug(f'Read redirect URL: {redir_url}')
+    app.logger.debug(f'Read redirect URL: {repr(redir_url)}')
     hit_count = 0
     try:
         with open(hits_file, 'r') as hf:
@@ -51,18 +51,18 @@ def hit_redirect(normalized_path):
         with open(hits_file, 'w') as hf:
             hf.write(str(hit_count))
     except IOError as e:
-        app.logger.error(f'Could not write {hits_file}: {e.message}')
+        app.logger.error(f'Could not write {hits_file}: {e}')
     return merge_url_params(redir_url)
 
 
 @app.route("/<path:path>")
 def normalize_and_redirect(path):
-    app.logger.info(f'Redirecting for {path}')
+    app.logger.debug(f'Redirecting for {path}')
     normed = normalize_path(path)
     try:
         dest_url = hit_redirect(normed)
     except IOError as e:
-        app.logger.info(f'Reading redirect failed: {e.message}; returning 404')
+        app.logger.info(f'Reading redirect failed: {e}; returning 404')
         abort(404)
-    app.logger.info(f'Redirecting to {dest_url}')
-    return redirect(dest_url, code=301)
+    app.logger.info(f'{request.url} -> {dest_url}')
+    return redirect(dest_url.strip(), code=301)
