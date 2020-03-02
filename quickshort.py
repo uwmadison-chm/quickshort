@@ -85,8 +85,9 @@ def update_hit_count(normalized_path):
         with open(hits_file, 'r') as hf:
             hit_count = int(hf.read().strip())
     except (IOError, ValueError):
-        app.logger.info(f'Could not read {hits_file}, hit_count = 0')
+        app.logger.debug(f'Could not read {hits_file}, hit_count = 0')
     hit_count += 1
+    app.logger.debug(f'Hit count is now {hit_count}')
     try:
         with open(hits_file, 'w') as hf:
             hf.write(str(hit_count)+'\n')
@@ -113,10 +114,14 @@ def log_redirection(normalized_path):
     try:
         with open(log_file, 'a') as f:
             f.write(
-                '\t'.join([hit_time, request.url]) + '\n'
+                '\t'.join([
+                    hit_time,
+                    request.url,
+                    request.headers.get('HTTP_REFERER', '')]) + '\n'
             )
     except IOError as e:
         app.logger.error(f'Could not write {log_file}: {e}')
+    update_hit_count(normalized_path)
 
 
 def hit_redirect(normalized_path):
