@@ -22,7 +22,7 @@ IGNORE_PATHS = {
 os.makedirs(HITCOUNT_PATH, exist_ok=True)
 os.makedirs(LOG_PATH, exist_ok=True)
 
-NORMALIZER = re.compile(r'[^a-z0-9]')
+NORMALIZER = re.compile(r'[^a-z0-9]', re.IGNORECASE)
 
 
 if os.environ.get('GUNICORN_LOGGING'):
