@@ -3,6 +3,7 @@
 import os
 import re
 import pathlib
+from datetime import datetime
 from urllib import parse
 
 from flask import Flask, request, abort, redirect
@@ -10,8 +11,16 @@ from flask import Flask, request, abort, redirect
 app = Flask(__name__)
 
 REDIRECTS_PATH = pathlib.Path(os.environ['REDIRECTS_PATH'])
-HITS_PATH = REDIRECTS_PATH / '_hits'
-os.makedirs(HITS_PATH, exist_ok=True)
+HITCOUNT_PATH = REDIRECTS_PATH / '_hits'
+LOG_PATH = REDIRECTS_PATH / '_log'
+MISS_NORMPATH = '_404'
+IGNORE_PATHS = {
+    'favicon.ico',
+    'robots.txt'
+}
+
+os.makedirs(HITCOUNT_PATH, exist_ok=True)
+os.makedirs(LOG_PATH, exist_ok=True)
 
 NORMALIZER = re.compile(r'[^a-z0-9]')
 
@@ -23,13 +32,39 @@ if os.environ.get('GUNICORN_LOGGING'):
     app.logger.setLevel(gunicorn_logger.level)
 
 
+@app.route("/<path:path>")
+def normalize_and_redirect(path):
+    """
+    This is the only route for the whole app -- all we do is redirect.
+    Takes an incoming URL,
+    """
+    app.logger.debug(f'Redirecting for {path}')
+    normed = normalize_path(path)
+    if path in IGNORE_PATHS:
+        app.logger.debug(f'Ignoring {path} without logging')
+        abort(404)
+    try:
+        dest_url = hit_redirect(normed)
+    except IOError as e:
+        log_404(e)
+        abort(404)
+    return redirect(dest_url, code=301)
+
+
 def normalize_path(path):
+    """
+    Strip non-alphanumeric characters from path and downcase it.
+    """
     stripped = NORMALIZER.sub('', path)
     downed = stripped.lower()
     return downed
 
 
 def merge_url_params(redir_url):
+    """
+    Merge the URL params of our incoming URL with the ones in our saved URL
+    If there is a conflict, the ones in our saved URL always win.
+    """
     redir_parsed = parse.urlsplit(redir_url)
     file_redir_params = parse.parse_qs(redir_parsed.query)
     file_redir_params = {k: ' '.join(v) for k, v in file_redir_params.items()}
@@ -39,14 +74,12 @@ def merge_url_params(redir_url):
     return dest_split.geturl()
 
 
-def hit_redirect(normalized_path):
-    redir_file = REDIRECTS_PATH / normalized_path
-    hits_file = HITS_PATH / normalized_path
-    redir_url = ''
-    app.logger.debug(f'Trying to read {redir_file}')
-    with open(redir_file, 'r') as rf:
-        redir_url = rf.read().strip()
-    app.logger.debug(f'Read redirect URL: {repr(redir_url)}')
+def update_hit_count(normalized_path):
+    """
+    Increments the count in HITCOUNT_PATH/normalized_path
+    Creates a file and initializes it to 0 if none exists
+    """
+    hits_file = HITCOUNT_PATH / normalized_path
     hit_count = 0
     try:
         with open(hits_file, 'r') as hf:
@@ -56,20 +89,45 @@ def hit_redirect(normalized_path):
     hit_count += 1
     try:
         with open(hits_file, 'w') as hf:
-            hf.write(str(hit_count))
+            hf.write(str(hit_count)+'\n')
     except IOError as e:
         app.logger.error(f'Could not write {hits_file}: {e}')
-    return merge_url_params(redir_url)
 
 
-@app.route("/<path:path>")
-def normalize_and_redirect(path):
-    app.logger.debug(f'Redirecting for {path}')
-    normed = normalize_path(path)
+def log_404(exception):
+    """
+    Log a hit to LOG_PATH/_404.log
+    """
+    app.logger.debug(f'Cannot find redirect: {exception}, returning 404')
+    log_redirection(MISS_NORMPATH)
+
+
+def log_redirection(normalized_path):
+    """
+    Log a hit to LOG_PATH/normalized_path.log
+    Log entries are one hit per line, with isotime and incoming path
+    separated by \t
+    """
+    log_file = LOG_PATH / f'{normalized_path}.log'
+    hit_time = datetime.utcnow().isoformat()
     try:
-        dest_url = hit_redirect(normed)
+        with open(log_file, 'a') as f:
+            f.write(
+                '\t'.join([hit_time, request.url]) + '\n'
+            )
     except IOError as e:
-        app.logger.info(f'Reading redirect failed: {e}; returning 404')
-        abort(404)
-    app.logger.info(f'{request.url} -> {dest_url}')
-    return redirect(dest_url.strip(), code=301)
+        app.logger.error(f'Could not write {log_file}: {e}')
+
+
+def hit_redirect(normalized_path):
+    """
+    Find the target of our redirection, log it, and return it.
+    """
+    redir_file = REDIRECTS_PATH / normalized_path
+    redir_url = ''
+    app.logger.debug(f'Trying to read {redir_file}')
+    with open(redir_file, 'r') as rf:
+        redir_url = rf.read().strip()
+    app.logger.debug(f'Read redirect URL: {repr(redir_url)}')
+    log_redirection(normalized_path)
+    return merge_url_params(redir_url)
