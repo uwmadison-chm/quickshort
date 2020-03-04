@@ -5,7 +5,7 @@ Removes any non-alphanumeric characters from incoming URLs, and changes everythi
 
 or logging, quickshort stores hit counts both as a single number and individual entries.
 
-A demo of this project is [available on Glitch](https://glitch.com/~quickshort-demo).
+A demo of this project is [available on Glitch](https://glitch.com/edit/#!/quickshort-demo).
 
 ## Examples
 
