@@ -1,9 +1,11 @@
 # quickshort
-A very small Flask-based URL shortener. Biased towards making small-ish numbers of forgiving-to-type URLs, from flyers and handouts for human subjects studies.
+A shortener made for hand-typed URLs, from flyers and handouts for human subjects studies. Small, simple, does not require a database — shortened URLs and logs are stored in text files. Requires python 3.7 or higher.
 
-Removes any non-alphanumeric characters from incoming URLs, and changes everything to lower case. Passes URL parameters on to the destination. Stores redirects and hit counts in the filesystem — does not rely on a SQL database.
+Removes any non-alphanumeric characters from incoming URLs, and changes everything to lower case.
 
-Requires python 3.7.
+or logging, quickshort stores hit counts both as a single number and individual entries.
+
+A demo of this project is [available on Glitch](https://glitch.com/~quickshort-demo).
 
 ## Examples
 
