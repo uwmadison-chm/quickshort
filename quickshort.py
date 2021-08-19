@@ -48,7 +48,7 @@ def normalize_and_redirect(path):
     except IOError as e:
         log_404(e)
         abort(404)
-    return redirect(dest_url, code=301)
+    return redirect(dest_url, code=302)
 
 
 def normalize_path(path):
