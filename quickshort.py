@@ -1,4 +1,4 @@
-# Copyright (c) 2020 Board of Regents of the University of Wisconsin System
+# Copyright (c) 2022 Board of Regents of the University of Wisconsin System
 
 import os
 import re
@@ -6,13 +6,15 @@ import pathlib
 from datetime import datetime
 from urllib import parse
 
-from flask import Flask, request, abort, redirect
+from flask import Flask, request, abort, redirect, Response
 
 app = Flask(__name__)
 
 REDIRECTS_PATH = pathlib.Path(os.environ['REDIRECTS_PATH'])
-HITCOUNT_PATH = REDIRECTS_PATH / '_hits'
-LOG_PATH = REDIRECTS_PATH / '_log'
+HITCOUNT_PATH = pathlib.Path(
+    os.environ.get('HITCOUNT_PATH', REDIRECTS_PATH / '_hits'))
+LOG_PATH = pathlib.Path(
+    os.environ.get('LOG_PATH', REDIRECTS_PATH / '_log'))
 MISS_NORMPATH = '_404'
 IGNORE_PATHS = {
     'favicon.ico',
@@ -32,13 +34,18 @@ if os.environ.get('GUNICORN_LOGGING'):
     app.logger.setLevel(gunicorn_logger.level)
 
 
+# app.logger.debug("Starting up")
+# app.logger.debug(f"redirects: {REDIRECTS_PATH}")
+# app.logger.debug(f"hits: {HITCOUNT_PATH}")
+# app.logger.debug(f"logs: {LOG_PATH}")
+
 @app.route("/<path:path>")
 def normalize_and_redirect(path):
     """
     This is the only route for the whole app -- all we do is redirect.
     Takes an incoming URL,
     """
-    app.logger.debug(f'Redirecting for {path}')
+    app.logger.info(f'Redirecting for {path}')
     normed = normalize_path(path)
     if path in IGNORE_PATHS:
         app.logger.debug(f'Ignoring {path} without logging')
@@ -51,6 +58,26 @@ def normalize_and_redirect(path):
     return redirect(dest_url, code=302)
 
 
+@app.route("/<path:path>/hits")
+def serve_hits(path):
+    app.logger.debug(f'Getting hits for {path}')
+    normed = normalize_path(path)
+    hits_file = hits_file_for(normed)
+    if (hits_file.exists() and hits_file.is_file()):
+        return Response(hits_file.read_text(), mimetype='text/plain')
+    abort(404) 
+
+
+@app.route("/<path:path>/log")
+def serve_log(path):
+    app.logger.debug(f'Getting log for {path}')
+    normed = normalize_path(path)
+    log_file = log_file_for(normed)
+    if (log_file.exists() and log_file.is_file()):
+        return Response(log_file.read_text(), mimetype='text/plain')
+    abort(404) 
+    
+    
 def normalize_path(path):
     """
     Strip non-alphanumeric characters from path and downcase it.
@@ -79,7 +106,7 @@ def update_hit_count(normalized_path):
     Increments the count in HITCOUNT_PATH/normalized_path
     Creates a file and initializes it to 0 if none exists
     """
-    hits_file = HITCOUNT_PATH / normalized_path
+    hits_file = hits_file_for(normalized_path)
     hit_count = 0
     try:
         with open(hits_file, 'r') as hf:
@@ -93,6 +120,14 @@ def update_hit_count(normalized_path):
             hf.write(str(hit_count)+'\n')
     except IOError as e:
         app.logger.error(f'Could not write {hits_file}: {e}')
+
+
+def hits_file_for(normed_path):
+    return HITCOUNT_PATH / normed_path
+
+
+def log_file_for(normed_path):
+    return LOG_PATH / f'{normed_path}.log'
 
 
 def log_404(exception):
@@ -109,7 +144,7 @@ def log_redirection(normalized_path):
     Log entries are one hit per line, with isotime and incoming path
     separated by \t
     """
-    log_file = LOG_PATH / f'{normalized_path}.log'
+    log_file = log_file_for(normalized_path)
     hit_time = datetime.utcnow().isoformat()
     try:
         with open(log_file, 'a') as f:
