@@ -25,6 +25,8 @@ https://example.com?a=b&d=e
 1. Clone this
 1. `pip install -r requirements.txt`
 1. `export REDIRECTS_PATH=<somewhere you control>`
+1. Optionally export `HITCOUNT_PATH` and `LOG_PATH`
+1. If you want to serve hit counts and logs over HTTP, export SERVE_LOGS
 1. Create a file in `$REDIRECTS_PATH` named with the redirection key you want. Only lowercase letters and numbers are allowed.
 1. In that file, put the target URL
 1. Start the flask server, it will create `$REDIRECTS_PATH/hits`
