@@ -15,6 +15,7 @@ HITCOUNT_PATH = pathlib.Path(
     os.environ.get('HITCOUNT_PATH', REDIRECTS_PATH / '_hits'))
 LOG_PATH = pathlib.Path(
     os.environ.get('LOG_PATH', REDIRECTS_PATH / '_log'))
+SERVE_LOGS = os.environ.get('SERVE_LOGS', False)
 MISS_NORMPATH = '_404'
 IGNORE_PATHS = {
     'favicon.ico',
@@ -61,6 +62,8 @@ def normalize_and_redirect(path):
 @app.route("/<path:path>/hits")
 def serve_hits(path):
     app.logger.debug(f'Getting hits for {path}')
+    if not SERVE_LOGS:
+        abort(404)
     normed = normalize_path(path)
     hits_file = hits_file_for(normed)
     if (hits_file.exists() and hits_file.is_file()):
@@ -71,6 +74,8 @@ def serve_hits(path):
 @app.route("/<path:path>/log")
 def serve_log(path):
     app.logger.debug(f'Getting log for {path}')
+    if not SERVE_LOGS:
+        abort(404)
     normed = normalize_path(path)
     log_file = log_file_for(normed)
     if (log_file.exists() and log_file.is_file()):
