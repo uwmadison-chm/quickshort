@@ -1,9 +1,9 @@
 # quickshort
 A shortener made for hand-typed URLs, from flyers and handouts for human subjects studies. Small, simple, does not require a database — shortened URLs and logs are stored in text files. Requires python 3.7 or higher.
 
-Removes any non-alphanumeric characters from incoming URLs, and changes everything to lower case.
+Removes any non-alphanumeric characters from incoming URLs, and changes everything to lower case. Merges URL parameters — see Examples below.
 
-or logging, quickshort stores hit counts both as a single number and individual entries.
+For logging, quickshort stores hit counts both as a single number and individual entries. Hit counts and logs can optionally be given HTTP endpoints.
 
 A demo of this project is [available on Glitch](https://glitch.com/edit/#!/quickshort-demo).
 
