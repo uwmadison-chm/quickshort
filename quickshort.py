@@ -35,11 +35,6 @@ if os.environ.get('GUNICORN_LOGGING'):
     app.logger.setLevel(gunicorn_logger.level)
 
 
-# app.logger.debug("Starting up")
-# app.logger.debug(f"redirects: {REDIRECTS_PATH}")
-# app.logger.debug(f"hits: {HITCOUNT_PATH}")
-# app.logger.debug(f"logs: {LOG_PATH}")
-
 @app.route("/<path:path>")
 def normalize_and_redirect(path):
     """
