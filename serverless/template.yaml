@@ -1,0 +1,78 @@
+# AWS SAM template: redirect function behind a Function URL, its log group,
+# and an hourly job that copies hit events from CloudWatch Logs to S3.
+#   npm run build
+#   sam deploy --guided
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: quickshort URL shortener
+
+Parameters:
+  LogRetentionDays:
+    Type: Number
+    Default: 30
+    Description: Days to keep raw CloudWatch logs. The export job keeps the durable copy in S3.
+
+Globals:
+  Function:
+    Runtime: nodejs22.x
+    Architectures: [arm64]
+    CodeUri: dist/
+
+Resources:
+  RedirectLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: !Ref LogRetentionDays
+
+  RedirectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: entry/lambda.handler
+      MemorySize: 128
+      Timeout: 5
+      LoggingConfig:
+        LogGroup: !Ref RedirectLogGroup
+        LogFormat: Text
+      FunctionUrlConfig:
+        AuthType: NONE
+      # Cap concurrency to bound cost under abuse. Needs spare account quota.
+      # ReservedConcurrentExecutions: 10
+
+  HitsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  ExportFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: export/aws.handler
+      MemorySize: 256
+      Timeout: 300
+      Environment:
+        Variables:
+          LOG_GROUP: !Ref RedirectLogGroup
+          BUCKET: !Ref HitsBucket
+          PREFIX: hits/
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref HitsBucket
+        - Statement:
+            - Effect: Allow
+              Action: logs:FilterLogEvents
+              Resource: !GetAtt RedirectLogGroup.Arn
+      Events:
+        Hourly:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: rate(1 hour)
+
+Outputs:
+  RedirectUrl:
+    Value: !GetAtt RedirectFunctionUrl.FunctionUrl
+  HitsBucketName:
+    Value: !Ref HitsBucket

@@ -1,0 +1,17 @@
+# Cloudflare Workers deployment. Run `npm run redirects` first so the
+# generated redirects module exists; wrangler bundles the TypeScript itself.
+#   npx wrangler dev      # local, real Workers runtime
+#   npx wrangler deploy
+name = "quickshort"
+main = "src/entry/worker.ts"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+# Hit events are console.log lines; this stores them in Workers Logs.
+# Retention is short (days), so export them somewhere durable if you need
+# long-term stats. There is no Workers exporter in this repo yet.
+[observability]
+enabled = true
+
+# Custom domain (zone must be on Cloudflare):
+# routes = [{ pattern = "go.example.edu", custom_domain = true }]

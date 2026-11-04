@@ -1,0 +1,182 @@
+[
+  {
+    "path": "/foobar",
+    "status": 302,
+    "location": "https://example.com?a=b",
+    "logged": "foobar"
+  },
+  {
+    "path": "/foo-bar",
+    "status": 302,
+    "location": "https://example.com?a=b",
+    "logged": "foobar"
+  },
+  {
+    "path": "/Foo_Bar",
+    "status": 302,
+    "location": "https://example.com?a=b",
+    "logged": "foobar"
+  },
+  {
+    "path": "/FOOBAR",
+    "status": 302,
+    "location": "https://example.com?a=b",
+    "logged": "foobar"
+  },
+  {
+    "path": "/foo-bar?a=c&d=e",
+    "status": 302,
+    "location": "https://example.com?a=b&d=e",
+    "logged": "foobar"
+  },
+  {
+    "path": "/foobar?d=e&d=f",
+    "status": 302,
+    "location": "https://example.com?d=e&a=b",
+    "logged": "foobar"
+  },
+  {
+    "path": "/foobar?d=hello%20world&e=a+b",
+    "status": 302,
+    "location": "https://example.com?d=hello+world&e=a+b&a=b",
+    "logged": "foobar"
+  },
+  {
+    "path": "/foobar?q=%7E%2A%21%27%28%29",
+    "status": 302,
+    "location": "https://example.com?q=~%2A%21%27%28%29&a=b",
+    "logged": "foobar"
+  },
+  {
+    "path": "/foobar?empty=",
+    "status": 302,
+    "location": "https://example.com?empty=&a=b",
+    "logged": "foobar"
+  },
+  {
+    "path": "/foobar?flag",
+    "status": 302,
+    "location": "https://example.com?flag=&a=b",
+    "logged": "foobar"
+  },
+  {
+    "path": "/plain",
+    "status": 302,
+    "location": "https://example.com/path",
+    "logged": "plain"
+  },
+  {
+    "path": "/plain?x=1",
+    "status": 302,
+    "location": "https://example.com/path?x=1",
+    "logged": "plain"
+  },
+  {
+    "path": "/frag",
+    "status": 302,
+    "location": "https://example.com/p?x=1",
+    "logged": "frag"
+  },
+  {
+    "path": "/frag?y=2#ignored",
+    "status": 302,
+    "location": "https://example.com/p?y=2&x=1",
+    "logged": "frag"
+  },
+  {
+    "path": "/multi",
+    "status": 302,
+    "location": "https://example.com/?a=1+2",
+    "logged": "multi"
+  },
+  {
+    "path": "/multi?a=9&c=3",
+    "status": 302,
+    "location": "https://example.com/?a=1+2&c=3",
+    "logged": "multi"
+  },
+  {
+    "path": "/trailing",
+    "status": 302,
+    "location": "https://example.com/t/",
+    "logged": "trailing"
+  },
+  {
+    "path": "/fo%6Fbar",
+    "status": 302,
+    "location": "https://example.com?a=b",
+    "logged": "foobar"
+  },
+  {
+    "path": "/foobar/",
+    "status": 302,
+    "location": "https://example.com?a=b",
+    "logged": "foobar"
+  },
+  {
+    "path": "/a/b/foobar",
+    "status": 404,
+    "location": null,
+    "logged": "_404"
+  },
+  {
+    "path": "/nope",
+    "status": 404,
+    "location": null,
+    "logged": "_404"
+  },
+  {
+    "path": "/",
+    "status": 404,
+    "location": null,
+    "logged": null
+  },
+  {
+    "path": "/favicon.ico",
+    "status": 404,
+    "location": null,
+    "logged": null
+  },
+  {
+    "path": "/robots.txt",
+    "status": 404,
+    "location": null,
+    "logged": null
+  },
+  {
+    "path": "/Favicon.ico",
+    "status": 404,
+    "location": null,
+    "logged": "_404"
+  },
+  {
+    "path": "/foobar/hits",
+    "status": 404,
+    "location": null,
+    "logged": null
+  },
+  {
+    "path": "/foobar/log",
+    "status": 404,
+    "location": null,
+    "logged": null
+  },
+  {
+    "path": "/a/b/hits",
+    "status": 404,
+    "location": null,
+    "logged": null
+  },
+  {
+    "path": "/hits",
+    "status": 302,
+    "location": "https://example.com/hits-page",
+    "logged": "hits"
+  },
+  {
+    "path": "/log",
+    "status": 404,
+    "location": null,
+    "logged": "_404"
+  }
+]
