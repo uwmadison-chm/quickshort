@@ -55,7 +55,7 @@ export function handle(request: Request, redirects: Redirects, now: Date = new D
     quickshort: 'hit',
     t: now.toISOString(),
     key: target === undefined ? MISS_KEY : key,
-    url: request.url,
+    url: publicUrl(request),
     referer: request.headers.get('referer') ?? '',
   };
   if (target === undefined) {
@@ -66,6 +66,34 @@ export function handle(request: Request, redirects: Redirects, now: Date = new D
     response: new Response(null, { status: 302, headers: { Location: location } }),
     event,
   };
+}
+
+/**
+ * The URL as the client saw it. Behind a reverse proxy the request arrives at
+ * the platform's own hostname (e.g. *.workers.dev), so prefer the proxy's
+ * X-Forwarded-Host / X-Forwarded-Proto when present. This only affects the
+ * logged URL; redirect targets never depend on the host, so a client spoofing
+ * these headers can at worst mislabel its own log line.
+ */
+export function publicUrl(request: Request): string {
+  const url = new URL(request.url);
+  const host = firstValue(request.headers.get('x-forwarded-host'));
+  const proto = firstValue(request.headers.get('x-forwarded-proto'));
+  if (host) {
+    try {
+      const forwarded = new URL(`http://${host}`);
+      url.hostname = forwarded.hostname;
+      url.port = forwarded.port; // "" clears the internal port
+    } catch {
+      // ignore malformed header
+    }
+  }
+  if (proto === 'http' || proto === 'https') url.protocol = proto + ':';
+  return url.toString();
+}
+
+function firstValue(header: string | null): string {
+  return (header ?? '').split(',')[0].trim();
 }
 
 /**

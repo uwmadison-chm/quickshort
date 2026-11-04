@@ -36,7 +36,33 @@ npm start             # local server on :8080 using ./redirects
 
 **Cloudflare Workers** (`wrangler.toml`): `npm run redirects && npx wrangler deploy`. Hit events land in Workers Logs, which only keeps a few days. There's no Workers export job yet.
 
-**Self-hosted** (`Dockerfile`): `docker build -t quickshort . && docker run -p 8080:8080 quickshort >> hits.jsonl`. Or skip Docker: `npm start >> hits.jsonl`. Put it behind a reverse proxy that sets `X-Forwarded-Proto`.
+**Self-hosted** (`Dockerfile`): `docker build -t quickshort . && docker run -p 8080:8080 quickshort >> hits.jsonl`. Or skip Docker: `npm start >> hits.jsonl`. Put it behind a reverse proxy for TLS (see below).
+
+## Custom domain via a reverse proxy
+
+Any target can sit behind a reverse proxy or load balancer on your own domain, which avoids moving DNS to Cloudflare or setting up CloudFront. Logged URLs use `X-Forwarded-Host` and `X-Forwarded-Proto` when present, so they show your domain rather than the platform's. Those headers only affect the logged URL, never where a request redirects.
+
+For Workers and Lambda Function URLs, the proxy must send the platform's hostname as `Host` (and as TLS SNI), or the platform won't route the request. Caddy, which also handles your certificate:
+
+```
+go.example.edu {
+	reverse_proxy https://quickshort.ACCOUNT.workers.dev {
+		header_up Host {upstream_hostport}
+	}
+}
+```
+
+Caddy sets `X-Forwarded-Host` and `X-Forwarded-Proto` by default. The nginx equivalent:
+
+```nginx
+location / {
+    proxy_pass https://quickshort.ACCOUNT.workers.dev;
+    proxy_ssl_server_name on;
+    proxy_set_header Host quickshort.ACCOUNT.workers.dev;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
 
 ## Stats
 
@@ -57,6 +83,7 @@ For a self-hosted `hits.jsonl`: `jq -r .key hits.jsonl | sort | uniq -c`.
 - Hit counts come from counting log events rather than a counter file, so concurrent hits can't lose counts.
 - Timestamps are `Date.toISOString()` (millisecond precision, `Z` suffix) instead of Python's naive `isoformat()`.
 - Invalid redirect files fail the build instead of failing on request.
+- Logged URLs honor `X-Forwarded-Host` / `X-Forwarded-Proto`.
 - 404 and 405 bodies are plain text, and `OPTIONS` returns 405 instead of Flask's automatic 200.
 
 ## Not yet verified

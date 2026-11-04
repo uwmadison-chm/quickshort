@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { handle, MISS_KEY, normalizePath } from '../src/core.ts';
+import { handle, MISS_KEY, normalizePath, publicUrl } from '../src/core.ts';
 
 const cases = JSON.parse(readFileSync(new URL('./parity-cases.json', import.meta.url), 'utf8'));
 const expected: Array<{ path: string; status: number; location: string | null; logged: string | null }> = JSON.parse(
@@ -62,4 +62,26 @@ test('keys that collide with Object.prototype are not redirects', () => {
 test('malformed percent-encoding is a 404, not a crash', () => {
   const { response } = handle(new Request(`${BASE}/%E0%A4%A`), cases.redirects);
   assert.equal(response.status, 404);
+});
+
+test('logged url uses X-Forwarded-Host and X-Forwarded-Proto from a proxy', () => {
+  const req = new Request('https://quickshort.acct.workers.dev/Foo-Bar?x=1', {
+    headers: { 'X-Forwarded-Host': 'go.example.edu, inner.proxy', 'X-Forwarded-Proto': 'https' },
+  });
+  const { event, response } = handle(req, cases.redirects);
+  assert.equal(event?.url, 'https://go.example.edu/Foo-Bar?x=1');
+  assert.equal(response.headers.get('location'), 'https://example.com?x=1&a=b');
+});
+
+test('publicUrl keeps the request url without proxy headers, and ignores junk', () => {
+  assert.equal(publicUrl(new Request('http://h.example/a?b=1')), 'http://h.example/a?b=1');
+  const junk = new Request('http://h.example/a', { headers: { 'X-Forwarded-Host': 'bad host/x', 'X-Forwarded-Proto': 'gopher' } });
+  assert.equal(publicUrl(junk), 'http://h.example/a');
+});
+
+test('publicUrl drops the internal port when the forwarded host has none', () => {
+  const req = new Request('http://localhost:8080/x', { headers: { 'X-Forwarded-Host': 'go.example.edu', 'X-Forwarded-Proto': 'https' } });
+  assert.equal(publicUrl(req), 'https://go.example.edu/x');
+  const withPort = new Request('http://localhost:8080/x', { headers: { 'X-Forwarded-Host': 'go.example.edu:8443' } });
+  assert.equal(publicUrl(withPort), 'http://go.example.edu:8443/x');
 });

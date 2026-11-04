@@ -3,22 +3,20 @@
 // redirect stdout to a file.
 //
 // Env: PORT (default 8080), HOST (default 0.0.0.0).
-// If behind a reverse proxy, it should set X-Forwarded-Proto so logged URLs
-// have the right scheme.
+// Behind a reverse proxy, the core uses X-Forwarded-Host/-Proto for logged URLs.
 
 import { createServer, type IncomingMessage } from 'node:http';
 import { handle, logLine } from '../core.ts';
 import redirects from '../redirects.generated.ts';
 
 function toRequest(req: IncomingMessage): Request {
-  const proto = String(req.headers['x-forwarded-proto'] ?? 'http').split(',')[0].trim();
   const host = req.headers.host ?? 'localhost';
   const headers = new Headers();
   for (const [k, v] of Object.entries(req.headers)) {
     if (v === undefined) continue;
     headers.set(k, Array.isArray(v) ? v.join(', ') : v);
   }
-  return new Request(`${proto}://${host}${req.url ?? '/'}`, { method: req.method, headers });
+  return new Request(`http://${host}${req.url ?? '/'}`, { method: req.method, headers });
 }
 
 const server = createServer(async (req, res) => {
