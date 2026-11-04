@@ -1,0 +1,21 @@
+{
+  "name": "quickshort-serverless",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "redirects": "node scripts/build-redirects.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test 'test/*.test.ts'",
+    "build": "npm run redirects && tsc -p tsconfig.build.json && node -e \"require('fs').writeFileSync('dist/package.json', '{\\\"type\\\":\\\"module\\\"}\\n')\"",
+    "start": "npm run redirects && node src/entry/node.ts"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-cloudwatch-logs": "^3.0.0",
+    "@aws-sdk/client-s3": "^3.0.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0"
+  }
+}
